@@ -1,10 +1,11 @@
 ﻿using System;
+using System.Collections.Generic;
 using System.IO;
 
 namespace generator
 {
     // Генератор текста на основе пар букв
-    class BigramsGenerator
+    public class BigramsGenerator
     {
         // убраны буквы "ё" и "ъ"
         private string syms = "абвгдежзийклмнопрстуфхцчшщыьэюя";
@@ -68,7 +69,7 @@ namespace generator
                 }
             }
         }
-        public char getBigram() 
+        public char getSymbol() 
         {
             int m = 0;
             if (prev == -1)
@@ -92,16 +93,14 @@ namespace generator
         public string getText(int minSymbols)
         {
             string resultStr = String.Empty;
-            do
-            {
-                resultStr += getBigram();
-            } while (resultStr.Length < minSymbols);
+            for (int i = 0; i < minSymbols; i++)
+                resultStr += getSymbol();
             return resultStr;
         }
     }
 
     // Генератор текста на основе частотных свойств слов
-    class GramsGenerator
+    public class GramsGenerator
     {
         private string[] words = new string[] { "и", "в", "не", "на", "с", "что", "я", "а", "он", "как",
                                                 "к", "по", "но", "его", "это", "из", "все", "у", "за", "от",
@@ -170,7 +169,7 @@ namespace generator
     }
 
     // Генератор текста на основе частотных свойств пар слов
-    class TwoGramsGenerator
+    public class TwoGramsGenerator
     {
         private string[] pairs = new string[] { "и не", "и в", "потому что", "я не", "у меня", "может быть", "то что", "что он", "не было", "в том",
                                                 "у нас", "в этом", "у него", "что в", "не только", "том что", "что я", "и на", "ничего не", "так и",
@@ -242,9 +241,24 @@ namespace generator
     {
         static void Main(string[] args)
         {
-            File.WriteAllText("UserFiles/test1.txt", new BigramsGenerator().getText(1000));
-            File.WriteAllText("UserFiles/test2.txt", new GramsGenerator().getText(1000));
-            File.WriteAllText("UserFiles/test3.txt", new TwoGramsGenerator().getText(1000));
+            GramsGenerator gen = new GramsGenerator();
+            Dictionary<string, int> stat = new Dictionary<string, int>();
+            for (int i = 0; i < 1000; i++)
+            {
+                string w = gen.getWord();
+                if (stat.ContainsKey(w))
+                    stat[w]++;
+                else
+                    stat.Add(w, 1);
+            }
+            foreach (KeyValuePair<string, int> entry in stat)
+            {
+                Console.WriteLine("{0} - {1}", entry.Key, entry.Value / 1000.0);
+            }
+
+            //File.WriteAllText("UserFiles/test1.txt", new BigramsGenerator().getText(1000));
+            //File.WriteAllText("UserFiles/test2.txt", new GramsGenerator().getText(1000));
+            //File.WriteAllText("UserFiles/test3.txt", new TwoGramsGenerator().getText(1000));
         }
     }
 }
