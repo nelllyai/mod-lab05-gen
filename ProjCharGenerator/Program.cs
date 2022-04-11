@@ -1,26 +1,106 @@
 ﻿using System;
-using System.Collections.Generic;
 using System.IO;
 
 namespace generator
 {
-    class CharGenerator 
+    // Генератор текста на основе пар букв
+    class BigramsGenerator
     {
-        private string syms = "абвгдеёжзийклмнопрстуфхцчшщьыъэюя"; 
-        private char[] data;
+        // убраны буквы "ё" и "ъ"
+        private string syms = "абвгдежзийклмнопрстуфхцчшщыьэюя";
+        private char[] symbols;
         private int size;
         private Random random = new Random();
-        public CharGenerator() 
+        int[,] weights = new int[,] { { 2, 12, 35, 8, 14, 7, 6, 15, 7, 7, 19, 27, 19, 45, 5, 11, 26, 31, 27, 3, 1, 10, 6, 7, 10, 1, 0, 0, 2, 6, 9},
+                                      { 5, 0, 0, 0, 0, 9, 1, 0, 6, 0, 0, 6, 0, 2, 21, 0, 8, 1, 0, 6, 0, 0, 0, 0, 0, 1, 11, 0, 0, 0, 2 },
+                                      { 35, 1, 5, 3, 3, 32, 0, 2, 17, 0, 7, 10, 3, 9, 58, 6, 6, 19, 6, 7, 0, 1, 1, 2, 4, 1, 18, 1, 2, 0, 3 },
+                                      { 7, 0, 0, 0, 3, 3, 0, 0, 5, 0, 1, 5, 0, 1, 50, 0, 7, 0, 0, 2, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 },
+                                      { 25, 0, 3, 1, 1, 29, 1, 1, 13, 0, 1, 5, 1, 13, 22, 3, 6, 8, 1, 10, 0, 0, 1, 1, 1, 0, 5, 1, 0, 0, 1 },
+                                      { 2, 9, 18, 11, 27, 7, 5, 10, 6, 15, 13, 35, 24, 63, 7, 16, 39, 37, 33, 3, 1, 8, 3, 7, 3, 3, 0, 0, 1, 1, 2 },
+                                      { 5, 1, 0, 0, 6, 12, 0, 0, 5, 0, 0, 0, 0, 6, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 },
+                                      { 35, 1, 7, 1, 5, 3, 0, 0, 4, 0, 2, 1, 2, 9, 9, 1, 3, 1, 0, 2, 0, 0, 0, 0, 0, 0, 4, 0, 0, 0, 4 },
+                                      { 4, 6, 22, 5, 10, 21, 2, 23, 19, 11, 19, 21, 20, 32, 8, 13, 11, 29, 29, 3, 1, 17, 3, 11, 1, 1, 0, 0, 1, 3, 17 },
+                                      { 1, 1, 4, 1, 3, 0, 1, 2, 4, 0, 5, 1, 2, 7, 9, 7, 3, 10, 2, 0, 0, 0, 1, 3, 2, 0, 0, 0, 0, 0, 0 },
+                                      { 24, 1, 4, 1, 0, 4, 1, 1, 26, 0, 1, 4, 1, 2, 66, 2, 10, 3, 7, 10, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0 },
+                                      { 25, 1, 1, 1, 1, 33, 2, 1, 36, 0, 1, 2, 1, 8, 30, 2, 0, 3, 1, 6, 0, 4, 0, 1, 0, 0, 3, 20, 0, 4, 9 },
+                                      { 18, 2, 4, 1, 1, 21, 1, 2, 23, 0, 3, 1, 3, 7, 19, 5, 2, 5, 3, 9, 1, 0, 0, 2, 0, 0, 5, 1, 1, 0, 3 },
+                                      { 54, 1, 2, 3, 3, 34, 0, 0, 58, 0, 3, 0, 1, 24, 67, 2, 1, 9, 9, 7, 1, 0, 5, 2, 0, 0, 36, 3, 0, 0, 5 },
+                                      { 1, 28, 84, 32, 47, 15, 7, 18, 12, 29, 19, 41, 38, 30, 9, 18, 43, 50, 39, 3, 2, 5, 2, 12, 4, 3, 0, 0, 2, 3, 2 },
+                                      { 7, 0, 0, 0, 0, 15, 0, 0, 4, 0, 0, 9, 0, 1, 46, 0, 41, 1, 0, 6, 0, 0, 0, 0, 0, 0, 2, 0, 0, 0, 2 },
+                                      { 55, 1, 4, 4, 3, 27, 3, 1, 24, 0, 3, 1, 3, 7, 56, 2, 1, 5, 9, 16, 0, 1, 1, 1, 2, 0, 8, 3, 0, 0, 5 },
+                                      { 8, 1, 7, 1, 2, 25, 0, 0, 6, 0, 40, 13, 3, 9, 27, 11, 4, 11, 82, 6, 0, 1, 1, 2, 2, 0, 1, 8, 0, 0, 17 },
+                                      { 35, 1, 27, 1, 3, 31, 0, 1, 28, 0, 5, 1, 1, 11, 56, 4, 26, 18, 2, 10, 0, 0, 0, 1, 0, 0, 11, 21, 0, 0, 4 },
+                                      { 1, 4, 4, 4, 11, 2, 6, 3, 2, 0, 8, 5, 5, 5, 1, 5, 7, 14, 7, 0, 0, 1, 0, 8, 3, 2, 0, 0, 0, 9, 1 },
+                                      { 2, 0, 0, 0, 0, 2, 0, 0, 2, 0, 0, 0, 0, 0, 1, 0, 1, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 },
+                                      { 4, 1, 4, 1, 3, 1, 0, 2, 3, 0, 4, 3, 3, 4, 18, 5, 3, 4, 2, 2, 1, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0 },
+                                      { 3, 0, 0, 0, 0, 7, 0, 0, 10, 0, 2, 0, 0, 0, 1, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0 },
+                                      { 12, 0, 0, 0, 0, 23, 0, 0, 13, 0, 2, 0, 0, 6, 0, 0, 0, 0, 7, 1, 0, 0, 0, 0, 1, 0, 0, 1, 0, 0, 0 },
+                                      { 5, 0, 0, 0, 0, 11, 0, 0, 14, 0, 1, 2, 0, 2, 2, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0 },
+                                      { 3, 0, 0, 0, 0, 8, 0, 0, 6, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 },
+                                      { 0, 1, 9, 1, 3, 12, 0, 2, 4, 7, 3, 6, 6, 3, 2, 10, 3, 9, 4, 1, 0, 16, 0, 1, 2, 0, 0, 0, 0, 0, 0 },
+                                      { 0, 2, 4, 1, 1, 2, 0, 2, 2, 0, 6, 0, 3, 13, 2, 4, 1, 11, 3, 0, 0, 0, 0, 1, 4, 0, 0, 0, 1, 3, 1 },
+                                      { 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 1, 0, 0, 0, 1, 9, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 },
+                                      { 0, 2, 1, 2, 1, 0, 0, 3, 1, 0, 1, 0, 1, 1, 1, 3, 1, 1, 7, 0, 0, 0, 1, 1, 0, 4, 0, 0, 0, 0, 0 },
+                                      { 1, 3, 9, 1, 3, 3, 1, 5, 3, 2, 3, 3, 4, 6, 3, 6, 3, 6, 10, 0, 0, 2, 1, 4, 1, 1, 0, 0, 1, 1, 1 } };
+        int prev = -1;
+        int[,] np;
+        int[] sum;
+
+        public BigramsGenerator()
         {
-           size = syms.Length;
-           data = syms.ToCharArray(); 
+            size = syms.Length;
+            sum = new int[size];
+            symbols = syms.ToCharArray();
+
+            for (int i = 0; i < size; i++)
+                for (int j = 0; j < size; j++)
+                    sum[i] += weights[i, j];
+
+            np = new int[size, size];
+            int s2 = 0;
+
+            for (int i = 0; i < size; i++)
+            {
+                for (int j = 0; j < size; j++)
+                {
+                    s2 += weights[i, j];
+                    np[i, j] = s2;
+                }
+            }
         }
-        public char getSym() 
+        public char getBigram() 
         {
-           return data[random.Next(0, size)]; 
+            int m = 0;
+            if (prev == -1)
+            {
+                m = random.Next(0, sum[random.Next(0, size)]);
+                prev = 0;
+            }
+            else
+                m = random.Next(0, sum[prev]);
+
+            int j;
+            for (j = 0; j < size; j++)
+            {
+                if (m < np[prev, j])
+                    break;
+            }
+            prev = j;
+            return symbols[j];
+        }
+
+        public string getText(int minSymbols)
+        {
+            string resultStr = String.Empty;
+            do
+            {
+                resultStr += getBigram();
+            } while (resultStr.Length < minSymbols);
+            return resultStr;
         }
     }
 
+    // Генератор текста на основе частотных свойств слов
     class GramsGenerator
     {
         private string[] words = new string[] { "и", "в", "не", "на", "с", "что", "я", "а", "он", "как",
@@ -44,17 +124,13 @@ namespace generator
                                     233062, 231733, 228843, 222715, 220734, 218046, 216726, 216511, 213262, 209534,
                                     205150, 204581, 202868, 201329, 195907, 192639, 189774, 189405, 184146, 180956,
                                     177179, 176597, 175961, 174807, 173458, 170327, 168703, 167945, 167764, 166587,
-                                    163311, 162849, 160363, 159227, 158961, 157741, 157644, 156987, 153712, 151251};
+                                    163311, 162849, 160363, 159227, 158961, 157741, 157644, 156987, 153712, 151251 };
         int[] np;
         int sum = 0;
+
         public GramsGenerator()
         {
             size = words.Length;
-            if (size != weights.Length)
-            {
-                Console.WriteLine("Error!");
-                Environment.Exit(1);
-            }
 
             for (int i = 0; i < size; i++)
                 sum += weights[i];
@@ -81,8 +157,19 @@ namespace generator
             }
             return words[j];
         }
+
+        public string getText(int minSymbols)
+        {
+            string resultStr = String.Empty;
+            do
+            {
+                resultStr += (getWord() + " ");
+            } while (resultStr.Length < minSymbols);
+            return resultStr;
+        }
     }
 
+    // Генератор текста на основе частотных свойств пар слов
     class TwoGramsGenerator
     {
         private string[] pairs = new string[] { "и не", "и в", "потому что", "я не", "у меня", "может быть", "то что", "что он", "не было", "в том",
@@ -109,14 +196,10 @@ namespace generator
                                     32428, 31972, 31330, 31004, 30819, 30782, 30278, 30274, 29973, 29741};
         int[] np;
         int sum = 0;
+
         public TwoGramsGenerator()
         {
             size = pairs.Length;
-            if (size != weights.Length)
-            {
-                Console.WriteLine("Error!");
-                Environment.Exit(1);
-            }
 
             for (int i = 0; i < size; i++)
                 sum += weights[i];
@@ -143,39 +226,25 @@ namespace generator
             }
             return pairs[j];
         }
+
+        public string getText(int minSymbols)
+        {
+            string resultStr = String.Empty;
+            do
+            {
+                resultStr += (getPair() + " ");
+            } while (resultStr.Length < minSymbols);
+            return resultStr;
+        }
     }
 
     class Program
     {
         static void Main(string[] args)
         {
-            //CharGenerator gen = new CharGenerator();
-            //SortedDictionary<char, int> stat = new SortedDictionary<char, int>();
-            //for(int i = 0; i < 1000; i++) 
-            //{
-            //   char ch = gen.getSym(); 
-            //   if (stat.ContainsKey(ch))
-            //      stat[ch]++;
-            //   else
-            //      stat.Add(ch, 1); Console.Write(ch);
-            //}
-            //Console.Write('\n');
-            //foreach (KeyValuePair<char, int> entry in stat) 
-            //{
-            //     Console.WriteLine("{0} - {1}",entry.Key,entry.Value/1000.0); 
-            //}
-            
-            GramsGenerator gen2 = new GramsGenerator();
-            string str2 = String.Empty;
-            for (int i = 0; i < 1000; i++)
-                str2 += (gen2.getWord() + " ");
-            File.WriteAllText("UserFiles/test2.txt", str2);
-
-            TwoGramsGenerator gen3 = new TwoGramsGenerator();
-            string str3 = String.Empty;
-            for (int i = 0; i < 1000; i++)
-                str2 += (gen3.getPair() + " ");
-            File.WriteAllText("UserFiles/test3.txt", str2);
+            File.WriteAllText("UserFiles/test1.txt", new BigramsGenerator().getText(1000));
+            File.WriteAllText("UserFiles/test2.txt", new GramsGenerator().getText(1000));
+            File.WriteAllText("UserFiles/test3.txt", new TwoGramsGenerator().getText(1000));
         }
     }
 }
