@@ -241,24 +241,9 @@ namespace generator
     {
         static void Main(string[] args)
         {
-            GramsGenerator gen = new GramsGenerator();
-            Dictionary<string, int> stat = new Dictionary<string, int>();
-            for (int i = 0; i < 1000; i++)
-            {
-                string w = gen.getWord();
-                if (stat.ContainsKey(w))
-                    stat[w]++;
-                else
-                    stat.Add(w, 1);
-            }
-            foreach (KeyValuePair<string, int> entry in stat)
-            {
-                Console.WriteLine("{0} - {1}", entry.Key, entry.Value / 1000.0);
-            }
-
-            //File.WriteAllText("UserFiles/test1.txt", new BigramsGenerator().getText(1000));
-            //File.WriteAllText("UserFiles/test2.txt", new GramsGenerator().getText(1000));
-            //File.WriteAllText("UserFiles/test3.txt", new TwoGramsGenerator().getText(1000));
+            File.WriteAllText("UserFiles/test1.txt", new BigramsGenerator().getText(1000));
+            File.WriteAllText("UserFiles/test2.txt", new GramsGenerator().getText(1000));
+            File.WriteAllText("UserFiles/test3.txt", new TwoGramsGenerator().getText(1000));
         }
     }
 }
