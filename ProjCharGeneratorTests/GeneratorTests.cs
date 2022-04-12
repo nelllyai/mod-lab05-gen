@@ -101,7 +101,7 @@ namespace generator.Tests
                     stat.Add(ch, 1);
             }
 
-            Assert.IsTrue((stat['щ'] / 1000.0) < 0.2);
+            Assert.IsTrue((stat['щ'] / 1000.0) < 0.2 || !stat.ContainsKey('щ'));
         }
 
         [TestMethod]
